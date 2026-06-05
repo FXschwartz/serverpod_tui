@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 import 'package:nocterm/nocterm.dart';
+import 'package:serverpod_tui/src/alert_message.dart';
 import 'package:serverpod_tui/src/app_state_holder.dart';
 import 'package:serverpod_tui/src/components/spinner.dart';
 import 'package:serverpod_tui/src/run_app.dart';
@@ -116,6 +117,41 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
     _exitArmTimer?.cancel();
   }
 
+  /// Dismisses the currently shown alert, if any.
+  void dismissAlert() {
+    component.holder.state.alert = null;
+    rebuild();
+  }
+
+  bool _handleKeyEvent(KeyboardEvent event) {
+    if (_handleCtrlC(event)) return true;
+    return _handleAlertKeys(event);
+  }
+
+  /// Handles keys for the pinned alert: Escape dismisses it and C re-copies
+  /// its copyable segment to the clipboard.
+  bool _handleAlertKeys(KeyboardEvent event) {
+    final alert = component.holder.state.alert;
+    if (alert == null) return false;
+
+    if (event.matches(LogicalKey.escape)) {
+      dismissAlert();
+      return true;
+    }
+
+    if (alert.copyText case final text?
+        when event.logicalKey == LogicalKey.keyC &&
+            !event.isControlPressed &&
+            !event.isAltPressed &&
+            !event.isMetaPressed) {
+      ClipboardManager.copy(text);
+      _showHint('Copied to clipboard', autoClear: true);
+      return true;
+    }
+
+    return false;
+  }
+
   /// Describes the part of the user interface represented by this component.
   Component buildApp(BuildContext context);
 
@@ -134,13 +170,14 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
             ),
             child: SpinnerScope(
               active: state.activeOperations.isNotEmpty,
-              // Ctrl-C is routed here as a keyboard event. The app's own key
-              // handlers run first (depth-first dispatch); only unhandled
-              // Ctrl-C bubbles up to this Focusable.
+              // Ctrl-C and the alert keys (Escape, C) are routed here as
+              // keyboard events. The app's own key handlers run first
+              // (depth-first dispatch); only unhandled keys bubble up to
+              // this Focusable.
               child: Focusable(
                 focused: true,
-                onKeyEvent: _handleCtrlC,
-                child: _withCtrlCHint(context, buildApp(context)),
+                onKeyEvent: _handleKeyEvent,
+                child: _withMessageBar(context, buildApp(context)),
               ),
             ),
           );
@@ -149,15 +186,20 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
     );
   }
 
-  Component _withCtrlCHint(BuildContext context, Component child) {
-    final hint = component.holder.state.ctrlCHint;
+  /// Renders the shared bottom message line: the transient [TuiState.ctrlCHint]
+  /// takes precedence while visible; otherwise the pinned [TuiState.alert] is
+  /// shown until dismissed.
+  Component _withMessageBar(BuildContext context, Component child) {
+    final state = component.holder.state;
+    final hint = state.ctrlCHint;
+    final alert = state.alert;
     final st = ServerpodTheme.of(context);
 
-    // Always wrap in the same Column, only toggling the hint row. Returning
-    // the bare child when there is no hint would change the component type in
-    // this slot, remounting the entire app subtree (and losing all of its
+    // Always wrap in the same Column, only toggling the message row. Returning
+    // the bare child when there is no message would change the component type
+    // in this slot, remounting the entire app subtree (and losing all of its
     // state: scroll positions, selections, splash fade progress) every time
-    // the hint appears or disappears.
+    // the message appears or disappears.
     return Column(
       children: [
         Expanded(child: child),
@@ -171,8 +213,60 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-          ),
+          )
+        else if (alert != null)
+          _buildAlertLine(st, alert),
       ],
+    );
+  }
+
+  Component _buildAlertLine(ServerpodThemeData st, AlertMessage alert) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 1),
+      child: Row(
+        children: [
+          Text(
+            '! ',
+            style: TextStyle(
+              color: st.warningLevel,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              alert.displayText,
+              style: TextStyle(
+                color: st.brightText,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          if (alert.copyText != null) ...[
+            Text(
+              ' (copied to clipboard)',
+              style: TextStyle(color: st.subtleDivider),
+            ),
+            const Text('  '),
+            Text(
+              'C',
+              style: TextStyle(
+                color: st.activationKey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Text(' Copy · '),
+          ] else
+            const Text('  '),
+          Text(
+            'Esc',
+            style: TextStyle(
+              color: st.activationKey,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Text(' Dismiss'),
+        ],
+      ),
     );
   }
 }

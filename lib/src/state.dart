@@ -1,3 +1,4 @@
+import 'package:serverpod_tui/src/alert_message.dart';
 import 'package:serverpod_tui/src/bounded_queue_list.dart';
 
 /// Central state for the TUI, mutated by the backend and rendered by nocterm.
@@ -21,6 +22,11 @@ abstract class TuiState {
   /// "Copied to clipboard" after a copy or "Press Ctrl-C again to exit" while
   /// exit is armed. Null when nothing should be shown.
   String? ctrlCHint;
+
+  /// Alert pinned at the bottom of the screen until dismissed with Escape or
+  /// replaced by a newer alert. Shares the bottom message line with
+  /// [ctrlCHint]; the transient hint takes precedence while visible.
+  AlertMessage? alert;
 }
 
 /// A tracked operation (server session or CLI progress).

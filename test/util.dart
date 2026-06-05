@@ -25,18 +25,21 @@ class TestStateHolder extends TuiAppStateHolder<TestState> {
   TestStateHolder(this._state);
 
   final TestState _state;
+  TuiAppState? _widgetState;
 
   @override
-  void attach(TuiAppState widgetState) {}
+  void attach(TuiAppState widgetState) => _widgetState = widgetState;
 
   @override
-  void detach(TuiAppState widgetState) {}
+  void detach(TuiAppState widgetState) {
+    if (_widgetState == widgetState) _widgetState = null;
+  }
 
   @override
   TestState get state => _state;
 
   @override
-  TuiAppState? get widgetState => null;
+  TuiAppState? get widgetState => _widgetState;
 }
 
 /// A minimal [TuiApp] for exercising base [TuiAppState] behavior in tests.

@@ -1,6 +1,7 @@
 ## 0.1.0-rc.7
 
 Improved form UI and added support for optional description for form configurations.
+Added alert messages: `TuiAppStateHolder.showAlert` pins a message to the bottom line until dismissed with Escape. A segment marked with angle brackets (e.g. `code: <123456>`) is auto-copied to the clipboard and re-copied with C.
 
 ## 0.1.0-rc.6
 
