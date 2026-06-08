@@ -55,9 +55,8 @@ abstract class TuiAppStateHolder<S extends TuiState> {
   @mustCallSuper
   void markDirty() => _dirtyController.add(null);
 
-  /// Shows [alert] pinned at the bottom of the screen, replacing any
-  /// previous alert. If the alert carries an [AlertMessage.copyText], it is
-  /// copied to the clipboard immediately.
+  /// Shows [alert], replacing any previous one. A copyable segment is copied
+  /// to the clipboard immediately.
   void showAlert(AlertMessage alert) {
     state.alert = alert;
     if (alert.copyText case final text?) {

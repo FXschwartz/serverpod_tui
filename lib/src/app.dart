@@ -117,7 +117,6 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
     _exitArmTimer?.cancel();
   }
 
-  /// Dismisses the currently shown alert, if any.
   void dismissAlert() {
     component.holder.state.alert = null;
     rebuild();
@@ -128,8 +127,8 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
     return _handleAlertKeys(event);
   }
 
-  /// Handles keys for the pinned alert: Escape dismisses it and C re-copies
-  /// its copyable segment to the clipboard.
+  // Escape dismisses the alert; C re-copies its segment in case the clipboard
+  // has been overwritten since the alert appeared.
   bool _handleAlertKeys(KeyboardEvent event) {
     final alert = component.holder.state.alert;
     if (alert == null) return false;
@@ -186,9 +185,8 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
     );
   }
 
-  /// Renders the shared bottom message line: the transient [TuiState.ctrlCHint]
-  /// takes precedence while visible; otherwise the pinned [TuiState.alert] is
-  /// shown until dismissed.
+  // The transient hint and the pinned alert share the bottom line; the hint
+  // wins while it's visible.
   Component _withMessageBar(BuildContext context, Component child) {
     final state = component.holder.state;
     final hint = state.ctrlCHint;

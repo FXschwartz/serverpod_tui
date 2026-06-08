@@ -8,8 +8,7 @@ Future<void> _sendKey(NoctermTester tester, LogicalKey key) {
   return tester.sendKeyEvent(KeyboardEvent(logicalKey: key));
 }
 
-/// Renders the pending frame. Holder-driven rebuilds are throttled (80ms
-/// trailing window), so the wait must cover the trailing emission.
+// Waits past the holder's 80ms rebuild throttle so the trailing frame lands.
 Future<void> _pump(NoctermTester tester) {
   return tester.pump(const Duration(milliseconds: 100));
 }

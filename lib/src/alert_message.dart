@@ -1,26 +1,23 @@
-/// A message surfaced prominently at the bottom of the TUI until dismissed,
-/// e.g. an email verification code logged by the server.
+/// A message pinned to the bottom of the TUI until dismissed, e.g. an email
+/// verification code logged by the server.
 ///
-/// The raw message may mark a copyable segment with angle brackets:
-/// `Verification: <123456>` is displayed as `Verification: 123456` with
-/// `123456` available as [copyText].
+/// A copyable segment can be marked with angle brackets: `Code: <123456>` is
+/// displayed as `Code: 123456`, with `123456` exposed as [copyText].
 final class AlertMessage {
   const AlertMessage._({required this.displayText, this.copyText});
 
   /// The message with any copy markup stripped.
   final String displayText;
 
-  /// The segment marked as copyable in the raw message, or null if the
-  /// message contained no markup.
+  /// The copyable segment, or null if the message contained no markup.
   final String? copyText;
 
-  /// The first `<...>` pair, captured without the brackets. Nested or empty
-  /// brackets are not treated as markup.
+  // Matches the first `<...>` pair. Excluding `<>` from the inner group means
+  // empty and unclosed brackets fall through as plain text.
   static final _copyMarkup = RegExp(r'<([^<>]+)>');
 
-  /// Parses [raw], extracting an optional copyable segment marked with
-  /// angle brackets. Only the first marked segment is treated as copyable;
-  /// any further markup is left verbatim.
+  /// Parses [raw]. Only the first marked segment is treated as copyable; any
+  /// later markup is left verbatim.
   factory AlertMessage.parse(String raw) {
     final match = _copyMarkup.firstMatch(raw);
     if (match == null) {

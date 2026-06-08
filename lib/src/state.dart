@@ -23,9 +23,9 @@ abstract class TuiState {
   /// exit is armed. Null when nothing should be shown.
   String? ctrlCHint;
 
-  /// Alert pinned at the bottom of the screen until dismissed with Escape or
-  /// replaced by a newer alert. Shares the bottom message line with
-  /// [ctrlCHint]; the transient hint takes precedence while visible.
+  /// Alert pinned to the bottom line until dismissed with Escape or replaced
+  /// by a newer alert. Shares the line with [ctrlCHint], which takes
+  /// precedence while shown.
   AlertMessage? alert;
 }
 
