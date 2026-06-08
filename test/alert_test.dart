@@ -8,6 +8,12 @@ Future<void> _sendKey(NoctermTester tester, LogicalKey key) {
   return tester.sendKeyEvent(KeyboardEvent(logicalKey: key));
 }
 
+/// Renders the pending frame. Holder-driven rebuilds are throttled (80ms
+/// trailing window), so the wait must cover the trailing emission.
+Future<void> _pump(NoctermTester tester) {
+  return tester.pump(const Duration(milliseconds: 100));
+}
+
 void main() {
   late NoctermTester tester;
   late TestState state;
@@ -28,52 +34,40 @@ void main() {
   group('Given an alert with a copyable segment', () {
     setUp(() async {
       holder.showAlert(AlertMessage.parse('Registration code: <h2k9x3mp>'));
-      await tester.pump(const Duration(milliseconds: 100));
+      await _pump(tester);
     });
 
     test('when shown then the segment is auto-copied to the clipboard', () {
       expect(ClipboardManager.paste(), 'h2k9x3mp');
     });
 
-    test('when shown then the message line renders without brackets', () {
+    test('when shown then the message renders without brackets', () {
       expect(
         tester.terminalState.containsText('Registration code: h2k9x3mp'),
         isTrue,
       );
+    });
+
+    test('when shown then the auto-copy is indicated', () {
       expect(
         tester.terminalState.containsText('(copied to clipboard)'),
         isTrue,
       );
     });
 
-    test(
-      'when C is pressed then the segment is re-copied with a hint',
-      () async {
-        ClipboardManager.copy('something else');
-
-        await _sendKey(tester, LogicalKey.keyC);
-
-        expect(ClipboardManager.paste(), 'h2k9x3mp');
-        expect(state.ctrlCHint, 'Copied to clipboard');
-      },
-    );
-
     test('when Escape is pressed then the alert is dismissed', () async {
       await _sendKey(tester, LogicalKey.escape);
-      await tester.pump(const Duration(milliseconds: 100));
+      await _pump(tester);
 
       expect(state.alert, isNull);
-      expect(
-        tester.terminalState.containsText('Registration code'),
-        isFalse,
-      );
+      expect(tester.terminalState.containsText('Registration code'), isFalse);
     });
 
     test(
       'when a newer alert is shown then it replaces the previous one',
       () async {
         holder.showAlert(AlertMessage.parse('Password reset code: <z7q1w8rt>'));
-        await tester.pump(const Duration(milliseconds: 100));
+        await _pump(tester);
 
         expect(state.alert?.copyText, 'z7q1w8rt');
         expect(ClipboardManager.paste(), 'z7q1w8rt');
@@ -87,26 +81,47 @@ void main() {
         );
       },
     );
+
+    group('and the clipboard has since been overwritten', () {
+      setUp(() {
+        ClipboardManager.copy('something else');
+      });
+
+      test('when C is pressed then the segment is copied again', () async {
+        await _sendKey(tester, LogicalKey.keyC);
+
+        expect(ClipboardManager.paste(), 'h2k9x3mp');
+      });
+
+      test('when C is pressed then a confirmation hint is shown', () async {
+        await _sendKey(tester, LogicalKey.keyC);
+
+        expect(state.ctrlCHint, 'Copied to clipboard');
+      });
+    });
   });
 
   group('Given an alert without a copyable segment', () {
     setUp(() async {
       ClipboardManager.copy('previous clipboard content');
       holder.showAlert(AlertMessage.parse('Server requires a restart'));
-      await tester.pump(const Duration(milliseconds: 100));
+      await _pump(tester);
     });
 
     test('when shown then the clipboard is left untouched', () {
       expect(ClipboardManager.paste(), 'previous clipboard content');
     });
 
-    test('when shown then no copy affordance is rendered', () {
+    test('when shown then the message renders with a dismiss affordance', () {
       expect(
         tester.terminalState.containsText('Server requires a restart'),
         isTrue,
       );
-      expect(tester.terminalState.containsText('Copy'), isFalse);
       expect(tester.terminalState.containsText('Dismiss'), isTrue);
+    });
+
+    test('when shown then no copy affordance is rendered', () {
+      expect(tester.terminalState.containsText('Copy'), isFalse);
     });
 
     test(
@@ -131,7 +146,7 @@ void main() {
       holder.showAlert(AlertMessage.parse('Registration code: <h2k9x3mp>'));
       state.ctrlCHint = 'Press Ctrl-C again to exit';
       holder.markDirty();
-      await tester.pump(const Duration(milliseconds: 100));
+      await _pump(tester);
     });
 
     test('when rendered then the hint takes precedence over the alert', () {
@@ -139,16 +154,13 @@ void main() {
         tester.terminalState.containsText('Press Ctrl-C again to exit'),
         isTrue,
       );
-      expect(
-        tester.terminalState.containsText('Registration code'),
-        isFalse,
-      );
+      expect(tester.terminalState.containsText('Registration code'), isFalse);
     });
 
     test('when the hint clears then the alert line returns', () async {
       state.ctrlCHint = null;
       holder.markDirty();
-      await tester.pump(const Duration(milliseconds: 100));
+      await _pump(tester);
 
       expect(
         tester.terminalState.containsText('Registration code: h2k9x3mp'),
@@ -158,7 +170,7 @@ void main() {
   });
 
   group('Given no alert', () {
-    test('when Escape is pressed then nothing changes', () async {
+    test('when Escape is pressed then the state is unchanged', () async {
       await _sendKey(tester, LogicalKey.escape);
 
       expect(state.alert, isNull);
