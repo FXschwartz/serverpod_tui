@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 import 'package:nocterm/nocterm.dart';
-import 'package:serverpod_tui/src/alert_message.dart';
 import 'package:serverpod_tui/src/app_state_holder.dart';
 import 'package:serverpod_tui/src/clipboard.dart';
 import 'package:serverpod_tui/src/components/spinner.dart';
@@ -177,7 +176,7 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
               child: Focusable(
                 focused: true,
                 onKeyEvent: _handleKeyEvent,
-                child: _withMessageBar(context, buildApp(context)),
+                child: _withCtrlCHint(context, buildApp(context)),
               ),
             ),
           );
@@ -186,19 +185,18 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
     );
   }
 
-  // The transient hint and the pinned alert share the bottom line; the hint
-  // wins while it's visible.
-  Component _withMessageBar(BuildContext context, Component child) {
-    final state = component.holder.state;
-    final hint = state.ctrlCHint;
-    final alert = state.alert;
+  // The transient hint shown at the very bottom (e.g. "Copied to clipboard",
+  // "Press Ctrl-C again to exit"). The alert itself is rendered by the
+  // consumer via [AlertLine] - e.g. pinned inside the log panel.
+  Component _withCtrlCHint(BuildContext context, Component child) {
+    final hint = component.holder.state.ctrlCHint;
     final st = ServerpodTheme.of(context);
 
-    // Always wrap in the same Column, only toggling the message row. Returning
-    // the bare child when there is no message would change the component type
-    // in this slot, remounting the entire app subtree (and losing all of its
+    // Always wrap in the same Column, only toggling the hint row. Returning
+    // the bare child when there is no hint would change the component type in
+    // this slot, remounting the entire app subtree (and losing all of its
     // state: scroll positions, selections, splash fade progress) every time
-    // the message appears or disappears.
+    // the hint appears or disappears.
     return Column(
       children: [
         Expanded(child: child),
@@ -212,101 +210,8 @@ abstract class TuiAppState<S extends TuiApp> extends State<S> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-          )
-        else if (alert != null)
-          _buildAlertLine(st, alert),
+          ),
       ],
     );
-  }
-
-  Component _buildAlertLine(ServerpodThemeData st, AlertMessage alert) {
-    // nocterm's Text has no ellipsis/clip, so a line wider than the terminal
-    // wraps and steals rows from the app above. Measure the width and build a
-    // single pre-truncated line instead.
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 1),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth.isFinite
-              ? constraints.maxWidth.floor()
-              : alert.displayText.length + 32;
-          // Centered when it fits; pre-truncated to fill the width otherwise.
-          return Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: _alertSpans(st, alert, maxWidth),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  /// Builds the alert line's spans, fitted to [maxWidth] columns. The message
-  /// is truncated from the left so the trailing code stays visible, and the
-  /// code (if any) is emphasised.
-  List<Component> _alertSpans(
-    ServerpodThemeData st,
-    AlertMessage alert,
-    int maxWidth,
-  ) {
-    const prefix = '! ';
-    final code = alert.copyText;
-
-    // (text, isKey) pairs for the trailing action hints.
-    final hints = <(String, bool)>[
-      (' · ', false),
-      if (code != null) ...[('C', true), (' copy ', false)],
-      ('Esc', true),
-      (' close', false),
-    ];
-    final hintsWidth = hints.fold<int>(0, (w, h) => w + h.$1.length);
-
-    final available = maxWidth - prefix.length - hintsWidth;
-    final message = _truncateKeepingTail(alert.displayText, available);
-
-    Text plain(String text) =>
-        Text(text, style: TextStyle(color: st.brightText));
-
-    // Emphasise the code where it survives in the (possibly truncated) message.
-    final codeStart = code == null ? -1 : message.lastIndexOf(code);
-    final messageSpans = codeStart < 0
-        ? [plain(message)]
-        : [
-            plain(message.substring(0, codeStart)),
-            Text(
-              code!,
-              style: TextStyle(
-                color: st.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            plain(message.substring(codeStart + code.length)),
-          ];
-
-    return [
-      Text(
-        prefix,
-        style: TextStyle(color: st.warningLevel, fontWeight: FontWeight.bold),
-      ),
-      ...messageSpans,
-      for (final (text, isKey) in hints)
-        Text(
-          text,
-          style: TextStyle(
-            color: isKey ? st.activationKey : st.subtleDivider,
-            fontWeight: isKey ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-    ];
-  }
-
-  /// Truncates [text] to [width] columns, keeping the tail and prefixing an
-  /// ellipsis when it doesn't fit. Returns empty when there is no room.
-  static String _truncateKeepingTail(String text, int width) {
-    if (width <= 0) return '';
-    if (text.length <= width) return text;
-    if (width == 1) return '…';
-    return '…${text.substring(text.length - (width - 1))}';
   }
 }

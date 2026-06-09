@@ -56,9 +56,10 @@ abstract class TuiAppStateHolder<S extends TuiState> {
   void markDirty() => _dirtyController.add(null);
 
   /// Shows [alert], replacing any previous one. A copyable segment is copied
-  /// to the clipboard immediately.
-  void showAlert(AlertMessage alert) {
+  /// to the clipboard immediately. [time] is shown alongside the alert.
+  void showAlert(AlertMessage alert, {DateTime? time}) {
     state.alert = alert;
+    state.alertTime = time;
     if (alert.copyText case final text?) {
       copyToClipboard(text);
     }

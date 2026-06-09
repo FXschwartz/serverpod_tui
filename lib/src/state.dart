@@ -23,10 +23,12 @@ abstract class TuiState {
   /// exit is armed. Null when nothing should be shown.
   String? ctrlCHint;
 
-  /// Alert pinned to the bottom line until dismissed with Escape or replaced
-  /// by a newer alert. Shares the line with [ctrlCHint], which takes
-  /// precedence while shown.
+  /// Alert pinned in the log panel until dismissed with Escape or replaced by
+  /// a newer alert. Rendered by the consumer via `AlertLine`.
   AlertMessage? alert;
+
+  /// When [alert] was raised, shown alongside it. Null when unknown.
+  DateTime? alertTime;
 }
 
 /// A tracked operation (server session or CLI progress).

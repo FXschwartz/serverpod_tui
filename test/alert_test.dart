@@ -36,47 +36,27 @@ void main() {
       await _pump(tester);
     });
 
+    test('when shown then it becomes the current alert', () {
+      expect(state.alert?.displayText, 'Registration code: h2k9x3mp');
+      expect(state.alert?.copyText, 'h2k9x3mp');
+    });
+
     test('when shown then the segment is auto-copied to the clipboard', () {
       expect(ClipboardManager.paste(), 'h2k9x3mp');
     });
 
-    test('when shown then the message renders without brackets', () {
-      expect(
-        tester.terminalState.containsText('Registration code: h2k9x3mp'),
-        isTrue,
-      );
-    });
-
-    test('when shown then a copy affordance is offered', () {
-      expect(tester.terminalState.containsText('copy'), isTrue);
-    });
-
     test('when Escape is pressed then the alert is dismissed', () async {
       await _sendKey(tester, LogicalKey.escape);
-      await _pump(tester);
 
       expect(state.alert, isNull);
-      expect(tester.terminalState.containsText('Registration code'), isFalse);
     });
 
-    test(
-      'when a newer alert is shown then it replaces the previous one',
-      () async {
-        holder.showAlert(AlertMessage.parse('Password reset code: <z7q1w8rt>'));
-        await _pump(tester);
+    test('when a newer alert is shown then it replaces the previous one', () {
+      holder.showAlert(AlertMessage.parse('Password reset code: <z7q1w8rt>'));
 
-        expect(state.alert?.copyText, 'z7q1w8rt');
-        expect(ClipboardManager.paste(), 'z7q1w8rt');
-        expect(
-          tester.terminalState.containsText('Registration code'),
-          isFalse,
-        );
-        expect(
-          tester.terminalState.containsText('Password reset code: z7q1w8rt'),
-          isTrue,
-        );
-      },
-    );
+      expect(state.alert?.copyText, 'z7q1w8rt');
+      expect(ClipboardManager.paste(), 'z7q1w8rt');
+    });
 
     group('and the clipboard has since been overwritten', () {
       setUp(() {
@@ -108,18 +88,6 @@ void main() {
       expect(ClipboardManager.paste(), 'previous clipboard content');
     });
 
-    test('when shown then the message renders with a dismiss affordance', () {
-      expect(
-        tester.terminalState.containsText('Server requires a restart'),
-        isTrue,
-      );
-      expect(tester.terminalState.containsText('close'), isTrue);
-    });
-
-    test('when shown then no copy affordance is rendered', () {
-      expect(tester.terminalState.containsText('copy'), isFalse);
-    });
-
     test(
       'when C is pressed then nothing is copied and no hint appears',
       () async {
@@ -134,34 +102,6 @@ void main() {
       await _sendKey(tester, LogicalKey.escape);
 
       expect(state.alert, isNull);
-    });
-  });
-
-  group('Given an alert and an active transient hint', () {
-    setUp(() async {
-      holder.showAlert(AlertMessage.parse('Registration code: <h2k9x3mp>'));
-      state.ctrlCHint = 'Press Ctrl-C again to exit';
-      holder.markDirty();
-      await _pump(tester);
-    });
-
-    test('when rendered then the hint takes precedence over the alert', () {
-      expect(
-        tester.terminalState.containsText('Press Ctrl-C again to exit'),
-        isTrue,
-      );
-      expect(tester.terminalState.containsText('Registration code'), isFalse);
-    });
-
-    test('when the hint clears then the alert line returns', () async {
-      state.ctrlCHint = null;
-      holder.markDirty();
-      await _pump(tester);
-
-      expect(
-        tester.terminalState.containsText('Registration code: h2k9x3mp'),
-        isTrue,
-      );
     });
   });
 
