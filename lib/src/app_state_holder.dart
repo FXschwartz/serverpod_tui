@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
-import 'package:nocterm/nocterm.dart';
 import 'package:serverpod_tui/src/alert_message.dart';
 import 'package:serverpod_tui/src/app.dart';
+import 'package:serverpod_tui/src/clipboard.dart';
 import 'package:serverpod_tui/src/state.dart';
 import 'package:stream_transform/stream_transform.dart';
 
@@ -60,7 +60,7 @@ abstract class TuiAppStateHolder<S extends TuiState> {
   void showAlert(AlertMessage alert) {
     state.alert = alert;
     if (alert.copyText case final text?) {
-      ClipboardManager.copy(text);
+      copyToClipboard(text);
     }
     markDirty();
   }

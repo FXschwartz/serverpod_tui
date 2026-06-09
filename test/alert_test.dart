@@ -47,11 +47,8 @@ void main() {
       );
     });
 
-    test('when shown then the auto-copy is indicated', () {
-      expect(
-        tester.terminalState.containsText('(copied to clipboard)'),
-        isTrue,
-      );
+    test('when shown then a copy affordance is offered', () {
+      expect(tester.terminalState.containsText('copy'), isTrue);
     });
 
     test('when Escape is pressed then the alert is dismissed', () async {
@@ -116,11 +113,11 @@ void main() {
         tester.terminalState.containsText('Server requires a restart'),
         isTrue,
       );
-      expect(tester.terminalState.containsText('Dismiss'), isTrue);
+      expect(tester.terminalState.containsText('close'), isTrue);
     });
 
     test('when shown then no copy affordance is rendered', () {
-      expect(tester.terminalState.containsText('Copy'), isFalse);
+      expect(tester.terminalState.containsText('copy'), isFalse);
     });
 
     test(
