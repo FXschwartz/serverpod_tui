@@ -79,6 +79,50 @@ void main() {
     });
   });
 
+  group('Given a tab bar laid out at a fractional width', () {
+    test(
+      'when rendered inside a bordered box '
+      'then the underline has no gap before the border junction',
+      () async {
+        tester = await NoctermTester.create(size: const Size(40, 6));
+        await tester.pumpComponent(
+          Container(
+            decoration: BoxDecoration(
+              border: BoxBorder.all(style: BoxBorderStyle.rounded),
+            ),
+            child: Row(
+              children: [
+                // Forces the bar onto fractional cells: its segments size
+                // with maxWidth.toInt(), which would leave the final half
+                // cell unpainted without the base rule behind them.
+                const SizedBox(width: 1.5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TabBar(
+                        labels: const ['Server logs'],
+                        selectedTab: 0,
+                        onTabChanged: (_) {},
+                      ),
+                      Expanded(child: const SizedBox.shrink()),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final ts = tester.terminalState;
+        // The cell beside the border keeps the underline; a truncation gap
+        // here would break the line just before its junction.
+        expect(ts.getTextAt(38, 2, length: 1), '━');
+        expect(ts.getTextAt(39, 2, length: 1), '┥');
+      },
+    );
+  });
+
   group('Given a tab bar inside a bordered box', () {
     test(
       'when rendered then the underline merges into both border sides',
@@ -109,6 +153,12 @@ void main() {
         final ts = tester.terminalState;
         expect(ts.getTextAt(0, 2, length: 1), '┝');
         expect(ts.getTextAt(39, 2, length: 1), '┥');
+        // The whole underline - junctions and segments alike - carries the
+        // surrounding box border's color, so bar and border read as one
+        // frame.
+        final borderColor = ServerpodThemeData.dark.subtleDivider;
+        expect(ts.getCellAt(0, 2)?.style.color, borderColor);
+        expect(ts.getCellAt(20, 2)?.style.color, borderColor);
       },
     );
   });

@@ -85,27 +85,25 @@ class TabBar extends StatelessComponent {
       ),
     );
 
-    // A full-width rule painted behind the tab segments. The segments
-    // overwrite every in-content cell, so only the two cells reached via the
-    // negative indents remain visible: the ends of the rule land on the
-    // surrounding box border and merge into junctions (┝/┥). It carries the
-    // border's color so the junctions blend in; where no border is present
-    // the reached ends paint nothing.
-    final underlineBase = Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Divider(
-        style: DividerStyle.bold,
-        indent: -1,
-        endIndent: -1,
-        color: ServerpodTheme.of(context).subtleDivider,
-      ),
-    );
-
     return Stack(
       children: [
-        underlineBase,
+        // A full-width base rule painted behind the tab segments, in the
+        // border's color like the segments themselves. It fills the cells
+        // fractional pane widths leave uncovered (the segments size with
+        // maxWidth.toInt(), truncating half cells), and its ends reach one
+        // cell outside the bar to merge the underline into a surrounding
+        // box border (┝/┥). Ends with no border to join paint nothing.
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Divider(
+            style: DividerStyle.bold,
+            indent: -1,
+            endIndent: -1,
+            color: ServerpodTheme.of(context).subtleDivider,
+          ),
+        ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: tabComponents,
@@ -159,9 +157,10 @@ class _Tab extends StatelessComponent {
           ),
           Text(
             ''.padLeft(underlineWidth, '━'),
+            // The selection highlight keeps its accent color; every other
+            // underline segment matches the surrounding box border.
             style: TextStyle(
-              color: selected ? theme.activationKey : null,
-              fontWeight: selected ? FontWeight.normal : FontWeight.dim,
+              color: selected ? theme.activationKey : theme.subtleDivider,
             ),
           ),
         ],
@@ -251,7 +250,12 @@ class _TabSpacing extends StatelessComponent {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(''.padLeft(width)),
-        Text(underline, style: const TextStyle(fontWeight: FontWeight.dim)),
+        // The underline shares the surrounding box border's color and
+        // weight so bar and border read as one frame.
+        Text(
+          underline,
+          style: TextStyle(color: ServerpodTheme.of(context).subtleDivider),
+        ),
       ],
     );
   }
