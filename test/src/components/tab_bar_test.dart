@@ -79,6 +79,71 @@ void main() {
     });
   });
 
+  group('Given a tab bar inside a bordered box', () {
+    test(
+      'when rendered then the underline merges into both border sides',
+      () async {
+        tester = await NoctermTester.create(size: const Size(40, 6));
+        await tester.pumpComponent(
+          Container(
+            decoration: BoxDecoration(
+              border: BoxBorder.all(style: BoxBorderStyle.rounded),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TabBar(
+                  labels: const ['Server logs'],
+                  selectedTab: 0,
+                  onTabChanged: (_) {},
+                ),
+                Expanded(child: const SizedBox.shrink()),
+              ],
+            ),
+          ),
+        );
+
+        // The tab bar sits inside the border, so its label is on row 1 and
+        // its underline on row 2. The underline's ends reach the border
+        // cells and form heavy tees instead of leaving gaps.
+        final ts = tester.terminalState;
+        expect(ts.getTextAt(0, 2, length: 1), '┝');
+        expect(ts.getTextAt(39, 2, length: 1), '┥');
+      },
+    );
+  });
+
+  test(
+    'Given a tab bar with no surrounding border '
+    'when rendered '
+    'then the underline ends paint no stray junction arms',
+    () async {
+      tester = await NoctermTester.create(size: const Size(40, 4));
+      await tester.pumpComponent(
+        Container(
+          padding: EdgeInsets.all(1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TabBar(
+                labels: const ['Server logs'],
+                selectedTab: 0,
+                onTabChanged: (_) {},
+              ),
+              Expanded(child: const SizedBox.shrink()),
+            ],
+          ),
+        ),
+      );
+
+      // The base rule reaches one cell outside the tab bar on each side,
+      // but with nothing there to join it leaves those cells untouched.
+      final ts = tester.terminalState;
+      expect(ts.getTextAt(0, 2, length: 1), ' ');
+      expect(ts.getTextAt(39, 2, length: 1), ' ');
+    },
+  );
+
   test(
     'Given fewer states than labels '
     'when rendered '

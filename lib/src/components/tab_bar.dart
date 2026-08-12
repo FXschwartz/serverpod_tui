@@ -85,9 +85,32 @@ class TabBar extends StatelessComponent {
       ),
     );
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: tabComponents,
+    // A full-width rule painted behind the tab segments. The segments
+    // overwrite every in-content cell, so only the two cells reached via the
+    // negative indents remain visible: the ends of the rule land on the
+    // surrounding box border and merge into junctions (┝/┥). It carries the
+    // border's color so the junctions blend in; where no border is present
+    // the reached ends paint nothing.
+    final underlineBase = Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Divider(
+        style: DividerStyle.bold,
+        indent: -1,
+        endIndent: -1,
+        color: ServerpodTheme.of(context).subtleDivider,
+      ),
+    );
+
+    return Stack(
+      children: [
+        underlineBase,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: tabComponents,
+        ),
+      ],
     );
   }
 }
