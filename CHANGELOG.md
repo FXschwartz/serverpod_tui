@@ -1,3 +1,8 @@
+## 0.12.0
+
+- **FEAT**: The tab bar underline now matches the surrounding box border's color (the selection highlight keeps its accent) and merges into the border with junction characters (`┝`/`┥`) instead of leaving gaps.
+- **FIX**: The underline no longer breaks one cell short of its end at fractional pane widths.
+
 ## 0.11.0
 
 - **FEAT**: Upgrade to nocterm 0.9.0. Borders and dividers now merge into junction characters (`├ ┤ ┬ ┴ ┼`) where they meet, so `BorderedBox` and dividers join seamlessly instead of leaving gaps.
