@@ -36,6 +36,8 @@ enum SimpleConfig<T extends FormConfigOption>
     required this.defaultOptions,
     this.requirements = const [],
     this.multiSelect = false,
+    this.exclusiveOptions = const {},
+    this.selectionRequired = false,
     this.description,
   });
 
@@ -50,7 +52,42 @@ enum SimpleConfig<T extends FormConfigOption>
   @override
   final bool multiSelect;
   @override
+  final Set<T> exclusiveOptions;
+  @override
+  final bool selectionRequired;
+  @override
   final FormDescription? description;
+}
+
+enum EditorOption implements FormConfigOption {
+  vsCode('VS Code'),
+  cursor('Cursor')
+  ;
+
+  const EditorOption(this.label);
+  @override
+  final String label;
+}
+
+class RequiredEditorConfig implements FormSelectionConfig<EditorOption> {
+  const RequiredEditorConfig();
+
+  @override
+  String get label => 'Editors';
+  @override
+  List<EditorOption> get options => EditorOption.values;
+  @override
+  Set<EditorOption> get defaultOptions => const {};
+  @override
+  bool get multiSelect => true;
+  @override
+  bool get selectionRequired => true;
+  @override
+  Set<EditorOption> get exclusiveOptions => const {};
+  @override
+  List<FormRequirement> get requirements => const [];
+  @override
+  FormDescription? get description => null;
 }
 
 // --- Test app infrastructure ---
@@ -574,4 +611,131 @@ void main() {
       },
     );
   });
+
+  group(
+    'Given a multi-screen form whose first config requires a selection',
+    () {
+      late NoctermTester tester;
+      late MultiScreenFormState state;
+      late _MultiScreenTestHolder holder;
+
+      setUp(() async {
+        state = MultiScreenFormState([
+          const RequiredEditorConfig(),
+          SimpleConfig.database,
+        ]);
+        holder = _MultiScreenTestHolder(_MultiScreenTestState(state));
+        tester = await NoctermTester.create(size: const Size(80, 24));
+        await tester.pumpComponent(
+          _MultiScreenTestApp(holder: holder),
+        );
+      });
+
+      tearDown(() async {
+        tester.dispose();
+        await holder.dispose();
+      });
+
+      test(
+        'when Enter is pressed without a selection, '
+        'then it stays on the first screen',
+        () async {
+          await _sendKey(tester, LogicalKey.enter);
+          await _pump(tester);
+
+          expect(state.currentScreenIndex, 0);
+        },
+      );
+
+      test(
+        'when the Next button is focused and activated using Space key '
+        'without a selection, '
+        'then it stays on the first screen',
+        () async {
+          await _sendKey(tester, LogicalKey.arrowDown);
+          await _pump(tester);
+          expect(state.focusOnButton, isTrue);
+
+          await _sendKey(tester, LogicalKey.space);
+          await _pump(tester);
+
+          expect(state.currentScreenIndex, 0);
+        },
+      );
+
+      test(
+        'when an option is selected using Space key and Enter is pressed, '
+        'then it advances to the next screen',
+        () async {
+          await _sendKey(tester, LogicalKey.space);
+          await _pump(tester);
+
+          await _sendKey(tester, LogicalKey.enter);
+          await _pump(tester);
+
+          expect(state.currentScreenIndex, 1);
+        },
+      );
+    },
+  );
+
+  group(
+    'Given a multi-screen form with a single config that requires a selection '
+    'and onSubmit',
+    () {
+      late NoctermTester tester;
+      late MultiScreenFormState state;
+      late _MultiScreenTestHolder holder;
+      var onSubmitCalled = false;
+
+      setUp(() async {
+        onSubmitCalled = false;
+        state = MultiScreenFormState([const RequiredEditorConfig()]);
+        holder = _MultiScreenTestHolder(_MultiScreenTestState(state));
+        tester = await NoctermTester.create(size: const Size(80, 24));
+        await tester.pumpComponent(
+          _MultiScreenTestApp(
+            holder: holder,
+            onSubmit: () => onSubmitCalled = true,
+          ),
+        );
+      });
+
+      tearDown(() async {
+        tester.dispose();
+        await holder.dispose();
+      });
+
+      test(
+        'when Space activates the submit button without a selection, '
+        'then onSubmit is not called',
+        () async {
+          await _sendKey(tester, LogicalKey.arrowDown);
+          await _pump(tester);
+          expect(state.focusOnButton, isTrue);
+
+          await _sendKey(tester, LogicalKey.space);
+          await _pump(tester);
+
+          expect(onSubmitCalled, isFalse);
+        },
+      );
+
+      test(
+        'when Space activates the submit button after selecting an option, '
+        'then onSubmit is called',
+        () async {
+          await _sendKey(tester, LogicalKey.space);
+          await _pump(tester);
+
+          await _sendKey(tester, LogicalKey.arrowDown);
+          await _pump(tester);
+          await _sendKey(tester, LogicalKey.space);
+          await _pump(tester);
+
+          expect(onSubmitCalled, isTrue);
+        },
+      );
+    },
+  );
 }

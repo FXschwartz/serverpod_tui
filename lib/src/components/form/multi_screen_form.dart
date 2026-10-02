@@ -155,6 +155,7 @@ class _MultiScreenNavigationButtons extends StatelessComponent {
               }
               rebuild();
             },
+            enabled: state.canAdvance,
             focused: state.focusOnButton && state.focusedButtonIndex == 1,
           ),
           const SizedBox(width: 1),
