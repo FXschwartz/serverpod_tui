@@ -1,3 +1,9 @@
+## 0.13.0
+
+- **FEAT**: Multi screen forms can now require a selection before moving past a config (`selectionRequired`), and multi-select configs can mark options that can not be combined with others (`exclusiveOptions`).
+- **FEAT**: Added `MultiScreenFormState.canAdvance`. The `Next`/`Submit` button is disabled while the current screen is missing a required selection.
+- **BREAKING**: `FormSelectionConfig` implementers must add `exclusiveOptions` and `selectionRequired`.
+
 ## 0.12.0
 
 - **FEAT**: The tab bar underline now matches the surrounding box border's color (the selection highlight keeps its accent) and merges into the border with junction characters (`┝`/`┥`) instead of leaving gaps.
