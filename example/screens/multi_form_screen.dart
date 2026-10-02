@@ -173,6 +173,8 @@ enum BoolConfig<T extends FormConfigOption> implements FormSelectionConfig<T> {
     required this.defaultOptions,
     this.requirements = const [],
     this.multiSelect = false,
+    this.exclusiveOptions = const {},
+    this.selectionRequired = false,
     this.description,
   });
 
@@ -186,6 +188,10 @@ enum BoolConfig<T extends FormConfigOption> implements FormSelectionConfig<T> {
   final List<FormRequirement> requirements;
   @override
   final bool multiSelect;
+  @override
+  final Set<T> exclusiveOptions;
+  @override
+  final bool selectionRequired;
   @override
   final FormDescription? description;
 }
@@ -242,6 +248,8 @@ enum SelectConfig<T extends FormConfigOption>
     required this.defaultOptions,
     this.requirements = const [],
     this.multiSelect = false,
+    this.exclusiveOptions = const {},
+    this.selectionRequired = false,
     this.description,
   });
 
@@ -255,6 +263,10 @@ enum SelectConfig<T extends FormConfigOption>
   final List<FormRequirement> requirements;
   @override
   final bool multiSelect;
+  @override
+  final Set<T> exclusiveOptions;
+  @override
+  final bool selectionRequired;
   @override
   final FormDescription? description;
 }

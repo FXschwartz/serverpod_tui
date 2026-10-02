@@ -189,6 +189,8 @@ enum SelectionConfig<T extends FormConfigOption>
     required this.defaultOptions,
     this.requirements = const [],
     this.multiSelect = false,
+    this.exclusiveOptions = const {},
+    this.selectionRequired = false,
     this.description,
   });
 
@@ -206,6 +208,12 @@ enum SelectionConfig<T extends FormConfigOption>
 
   @override
   final bool multiSelect;
+
+  @override
+  final Set<T> exclusiveOptions;
+
+  @override
+  final bool selectionRequired;
 
   @override
   final FormDescription? description;

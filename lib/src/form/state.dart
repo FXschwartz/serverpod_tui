@@ -89,11 +89,16 @@ class FormState {
     FormConfigOption option,
   ) {
     if (config.multiSelect) {
-      final selections = _selectionState[config];
-      if (selections != null && selections.contains(option)) {
+      final selections = _selectionState[config] ?? {};
+      if (selections.contains(option)) {
         _selectionState[config] = selections.difference({option});
+      } else if (config.exclusiveOptions.contains(option)) {
+        _selectionState[config] = {option};
       } else {
-        _selectionState[config] = {...?selections, option};
+        _selectionState[config] = {
+          ...selections.difference(config.exclusiveOptions),
+          option,
+        };
       }
     } else {
       _selectionState[config] = {option};
@@ -253,6 +258,16 @@ class MultiScreenFormState extends FormState {
   /// Whether the current screen is the summary screen.
   bool get isSummary => _currentScreenIndex >= configScreenCount;
 
+  /// False while the current screen is missing a required selection.
+  bool get canAdvance {
+    if (isSummary) return true;
+    final config = configurations[_currentScreenIndex];
+    if (config is! FormSelectionConfig || !config.selectionRequired) {
+      return true;
+    }
+    return getSelectedOptionsFor(config)?.isNotEmpty ?? false;
+  }
+
   bool _focusOnButton = false;
 
   /// Whether the Back/Next buttons are focused in multi-screen mode.
@@ -350,7 +365,7 @@ class MultiScreenFormState extends FormState {
 
   /// Advances to the next screen in multi-screen mode.
   void nextScreen() {
-    if (hasSingleScreen) return;
+    if (hasSingleScreen || !canAdvance) return;
     if (_currentScreenIndex < configScreenCount) {
       _currentScreenIndex++;
       _updateFormFocus();

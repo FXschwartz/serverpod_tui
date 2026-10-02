@@ -59,6 +59,7 @@ enum TestConfig<T extends FormConfigOption> implements FormSelectionConfig<T> {
     options: IdeOption.values,
     multiSelect: true,
     defaultOptions: <IdeOption>{},
+    exclusiveOptions: {IdeOption.none},
   )
   ;
 
@@ -68,6 +69,8 @@ enum TestConfig<T extends FormConfigOption> implements FormSelectionConfig<T> {
     required this.defaultOptions,
     this.requirements = const [],
     this.multiSelect = false,
+    this.exclusiveOptions = const {},
+    this.selectionRequired = false,
     this.description,
   });
 
@@ -85,6 +88,12 @@ enum TestConfig<T extends FormConfigOption> implements FormSelectionConfig<T> {
 
   @override
   final bool multiSelect;
+
+  @override
+  final Set<T> exclusiveOptions;
+
+  @override
+  final bool selectionRequired;
 
   @override
   final FormDescription? description;
@@ -108,7 +117,8 @@ enum IdeOption implements FormConfigOption {
   claude('Claude'),
   cursor('Cursor'),
   openCode('OpenCode'),
-  vsCode('VS Code')
+  vsCode('VS Code'),
+  none('None')
   ;
 
   const IdeOption(this.label);
@@ -352,6 +362,29 @@ void main() {
           state.getSelectedOptionsFor(TestConfig.ide),
           containsAll([IdeOption.vsCode, IdeOption.cursor]),
         );
+      },
+    );
+
+    test(
+      'when an exclusive multi-select option is selected after other options, '
+      'then only the exclusive option is selected',
+      () {
+        state.updateSelectedOption(TestConfig.ide, IdeOption.vsCode);
+        state.updateSelectedOption(TestConfig.ide, IdeOption.cursor);
+        state.updateSelectedOption(TestConfig.ide, IdeOption.none);
+
+        expect(state.getSelectedOptionsFor(TestConfig.ide), {IdeOption.none});
+      },
+    );
+
+    test(
+      'when another option is selected after an exclusive multi-select option, '
+      'then the exclusive option is deselected',
+      () {
+        state.updateSelectedOption(TestConfig.ide, IdeOption.none);
+        state.updateSelectedOption(TestConfig.ide, IdeOption.cursor);
+
+        expect(state.getSelectedOptionsFor(TestConfig.ide), {IdeOption.cursor});
       },
     );
 

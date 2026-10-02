@@ -51,6 +51,14 @@ abstract interface class FormSelectionConfig<T extends FormConfigOption>
 
   /// Whether this config supports multi-select options.
   bool get multiSelect;
+
+  /// Options that can not be combined with any other option
+  /// when [multiSelect] is true.
+  Set<T> get exclusiveOptions;
+
+  /// Whether at least one option must be selected
+  /// before a form can move past this config.
+  bool get selectionRequired;
 }
 
 extension FormSelectionConfigExtension on FormSelectionConfig {
