@@ -51,6 +51,7 @@ class MultiScreenForm extends Form {
                   config: config,
                   focused: true,
                   rebuild: rebuild,
+                  vertical: true,
                   onFormInputSubmit: onSubmit,
                   onFormInputArrowUp: () {
                     state.focusUp();
