@@ -2,7 +2,6 @@ import 'package:nocterm/nocterm.dart';
 import 'package:serverpod_tui/src/components/checkbox.dart';
 import 'package:serverpod_tui/src/components/radio_button.dart';
 import 'package:serverpod_tui/src/components/text.dart';
-import 'package:serverpod_tui/src/components/wrap.dart';
 import 'package:serverpod_tui/src/form/config.dart';
 import 'package:serverpod_tui/src/form/config_option.dart';
 import 'package:serverpod_tui/src/form/state.dart';
@@ -252,8 +251,8 @@ class FormSingleSelectConfiguration extends StatelessComponent {
 
     return FormConfigurationLayout(
       config: config,
-      child: Wrap(
-        spacing: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (final option in config.options.indexed)
             _FormOptionRadio(
@@ -332,8 +331,8 @@ class FormMultiSelectConfiguration extends StatelessComponent {
 
     return FormConfigurationLayout(
       config: config,
-      child: Wrap(
-        spacing: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (final option in config.options.indexed)
             _FormOptionCheckbox(
@@ -369,10 +368,13 @@ class _FormOptionRadio extends StatelessComponent {
   Component build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: RadioButton(
-        label: option.label,
-        value: selected,
+      child: _OptionRow(
         focused: focused,
+        child: RadioButton(
+          label: option.label,
+          value: selected,
+          focused: focused,
+        ),
       ),
     );
   }
@@ -396,11 +398,41 @@ class _FormOptionCheckbox extends StatelessComponent {
   Component build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Checkbox(
-        label: option.label,
-        value: selected,
+      child: _OptionRow(
         focused: focused,
+        child: Checkbox(
+          label: option.label,
+          value: selected,
+          focused: focused,
+        ),
       ),
+    );
+  }
+}
+
+/// An option with a cursor in front of it when focused.
+class _OptionRow extends StatelessComponent {
+  const _OptionRow({required this.focused, required this.child});
+
+  final bool focused;
+  final Component child;
+
+  @override
+  Component build(BuildContext context) {
+    final theme = ServerpodTheme.of(context);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          focused ? '❯' : ' ',
+          style: TextStyle(
+            color: theme.activationKey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        child,
+      ],
     );
   }
 }
